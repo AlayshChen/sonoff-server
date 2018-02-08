@@ -1,10 +1,9 @@
-#!/usr/bin/python
-
 import ssl
 import time
 import json
-import websocket
 from threading import Thread
+
+import websocket
 from flask import Flask, request
 
 class SonoffService:
@@ -20,7 +19,7 @@ class SonoffService:
         self.imei = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
     def get_switch_status(self, switch_id):
-        if self.switch_status_dic.has_key(switch_id):
+        if switch_id in self.switch_status_dic:
             return self.switch_status_dic[switch_id]
         else:
             return ""
@@ -28,7 +27,7 @@ class SonoffService:
     def set_switch_status(self, switch_id, status):
         self.switch_status_dic[switch_id] = status
         sequence = "%d" % (time.time() * 1000)
-        string = '{"action":"update","userAgent":"app","apikey":"%s","deviceid":"%s","params":{"switch":"%s"},"sequence":"%s"}' % (self.apikey, switch_id, status, sequence)
+        string = '{"action":"update","userAgent":"app","apikey":"%s","deviceid":"%s","params":{"switch":"%s"},"sequence":"%s"}' % (self.apikey, switch_id.decode('utf-8'), status.decode('utf-8'), sequence)
         self.send(string)
 
     def start(self):
@@ -61,27 +60,28 @@ class SonoffService:
             self.send('ping')
 
     def send(self, message):
-        print "send %s" % message
+        print("send %s" % message)
         try:
             self.ws.send(message)
-        except:
+        except Exception:
             pass
 
     def on_message(self, ws, message):
-        print "on_message %s" % message
-        dic = json.loads(message)
-        if dic.has_key("action") and dic["action"] == "update":
-            params = dic["params"]
-            if params.has_key("switch"):
-                switch_id = dic["deviceid"]
-                status = params["switch"]
-                self.switch_status_dic[switch_id] = status
+        print("on_message %s" % message)
+        if "action" in message:
+            dic = json.loads(message)
+            if dic["action"] == "update":
+                params = dic["params"]
+                if "switch" in params:
+                    switch_id = dic["deviceid"]
+                    status = params["switch"]
+                    self.switch_status_dic[switch_id] = status
 
     def on_error(self, ws, error):
-        print "on_error %s" % error
+        print("on_error %s" % error)
 
     def on_close(self, ws):
-        print "on_close"
+        print("on_close")
         self.ws = None
         self.ws_thread = None
         time.sleep(5)
