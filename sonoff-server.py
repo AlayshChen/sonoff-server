@@ -1,10 +1,14 @@
 #!/usr/bin/python
-
+"""
+Sonoff server python2
+"""
 import ssl
 import time
 import json
-import websocket
 from threading import Thread
+
+import requests
+import websocket
 from flask import Flask, request
 
 class SonoffService:
@@ -16,8 +20,19 @@ class SonoffService:
         self.appid = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         self.apikey = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
         self.nonce = "xxxxxxxx"
-        self.at = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         self.imei = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        time_stamp = time.time()
+        ts = "%d" % time_stamp
+        password = 'xxxxxx'
+        email = 'xxx@xxx.xxx'
+        url = 'https://api.coolkit.cc:8080/api/user/login'
+        headers = {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': 'Sign xxxxxxxxxxxxxxxx'
+            }
+        data = '{"apkVersion":"3.1.5","os":"ios","model":"iPhone10,3","imei":"%s","appid":"%s","romVersion":"11.2.5","password":"%s","email":"%s","version":6,"ts":"%s","nonce":"%s"}' % (self.imei, self.appid, password, email, ts, self.nonce)
+        r = requests.post(url, headers=headers, data=data)
+        self.at = json.loads(r.text)["at"]
 
     def get_switch_status(self, switch_id):
         if self.switch_status_dic.has_key(switch_id):
